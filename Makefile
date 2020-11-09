@@ -1,7 +1,6 @@
 OBJS = \
 	dro2play.o \
-	emu8950.o \
-	emuadpcm.o \
+	opl.o \
 	libdroplay.o
 
 PROGS = dro2play

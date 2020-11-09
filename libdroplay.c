@@ -1,5 +1,5 @@
 #include "libdroplay.h"
-#include "emu8950.h"
+#include "opl.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -41,7 +41,6 @@ static int AoWriter_close(struct AoWriter *self) {
 
 struct droplayer {
 	FILE *f;
-	OPL *chip[2];
 	dro2hdr hdr;
 	struct AoWriter ao;
 	int16_t sndbuf[FLUSH_SAMPLES];
@@ -67,13 +66,13 @@ static int16_t get_sample(droplayer d) {
 		uint8_t b8[2];
 		uint16_t b16[1];
 	} buf;
-	WORD(buf.b8, OPL_calc(d->chip[0]));
+	adlib_getsample(buf.b16, 1);
 	return buf.b16[0];
 }
 
 static void write_reg(droplayer d, int chipno, unsigned reg, unsigned val) {
 	if(chipno == 0)
-		OPL_writeReg(d->chip[0], reg, val);
+		adlib_write(reg, val);
 	/* we don't support 2 OPL chips yet */
 }
 
@@ -158,9 +157,7 @@ static int read_header(FILE *f, struct dro2hdr *hdr) {
 droplayer droplayer_new(void) {
 	droplayer d = calloc(sizeof (struct droplayer), 1);
 	AoWriter_init(&d->ao);
-	d->chip[0] = OPL_new(MSX_CLK, SAMPLERATE);
-	d->chip[1] = 0;
-	OPL_setChipType(d->chip[0], 2);
+	adlib_init(SAMPLERATE);
 	d->bufpos = 0;
 	d->f = 0;
 	return d;
@@ -176,8 +173,6 @@ void droplayer_delete(droplayer d) {
 	AoWriter_close(&d->ao);
 	fclose(d->f);
 	d->f = 0;
-	OPL_delete(d->chip[0]);
-	d->chip[0] = 0;
 	free(d);
 }
 
