@@ -105,6 +105,7 @@ static unsigned dro2play(droplayer d) {
 	}
 }
 
+#define ARRAY_SIZE(X) (sizeof(X)/sizeof(X[0]))
 const char *droplayer_strerror(int err) {
 	static const char etab[][20] = {
 	[0] = "unknown error code\0",
@@ -114,7 +115,7 @@ const char *droplayer_strerror(int err) {
 	[4] = "unsupported version",
 	[5] = "fopen failed\0      ",
 	};
-	if(err > 4 || err < 0) err = 0;
+	if(err >= ARRAY_SIZE(etab) || err < 0) err = 0;
 	return etab[err];
 }
 
