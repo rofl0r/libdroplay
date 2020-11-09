@@ -5,6 +5,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct dro2hdr {
 	uint32_t iLengthPairs;
 	uint32_t iLengthMS;
@@ -17,7 +21,9 @@ typedef struct dro2hdr {
 	uint8_t iCodemap[128];
 } dro2hdr;
 
-typedef struct droplayer *droplayer;
+struct droplayer_;
+
+typedef struct droplayer_* droplayer;
 
 droplayer droplayer_new(void);
 
@@ -30,5 +36,9 @@ const char *droplayer_strerror(int err);
 void droplayer_play(droplayer d);
 
 void droplayer_delete(droplayer d);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

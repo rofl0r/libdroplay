@@ -1,5 +1,5 @@
 #include "libdroplay.h"
-#include "emu8950.h"
+#include "dbopl.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -39,9 +39,9 @@ static int AoWriter_close(struct AoWriter *self) {
 	return ao_close(self->device);
 }
 
-struct droplayer {
+struct droplayer_ {
 	FILE *f;
-	OPL *chip[2];
+	DBOPL::Handler chip;
 	dro2hdr hdr;
 	struct AoWriter ao;
 	int16_t sndbuf[FLUSH_SAMPLES];
@@ -64,16 +64,17 @@ static void WORD(char *buf, uint32_t data) {
 
 static int16_t get_sample(droplayer d) {
 	union {
-		uint8_t b8[2];
-		uint16_t b16[1];
+		uint8_t b8[4];
+		uint16_t b16[2];
+		int32_t b32[1];
 	} buf;
-	WORD(buf.b8, OPL_calc(d->chip[0]));
-	return buf.b16[0];
+	d->chip.Generate(buf.b32, 1);
+	return buf.b32[0];
 }
 
 static void write_reg(droplayer d, int chipno, unsigned reg, unsigned val) {
 	if(chipno == 0)
-		OPL_writeReg(d->chip[0], reg, val);
+		d->chip.WriteReg(reg, val);
 	/* we don't support 2 OPL chips yet */
 }
 
@@ -155,12 +156,12 @@ static int read_header(FILE *f, struct dro2hdr *hdr) {
 	return 0;
 }
 
+extern "C" {
 droplayer droplayer_new(void) {
-	droplayer d = calloc(sizeof (struct droplayer), 1);
+	droplayer d = calloc(sizeof (struct droplayer_), 1);
 	AoWriter_init(&d->ao);
-	d->chip[0] = OPL_new(MSX_CLK, SAMPLERATE);
-	d->chip[1] = 0;
-	OPL_setChipType(d->chip[0], 2);
+	d->chip = DBOPL::Handler();
+	d->chip.Init(SAMPLERATE);
 	d->bufpos = 0;
 	d->f = 0;
 	return d;
@@ -176,8 +177,7 @@ void droplayer_delete(droplayer d) {
 	AoWriter_close(&d->ao);
 	fclose(d->f);
 	d->f = 0;
-	OPL_delete(d->chip[0]);
-	d->chip[0] = 0;
+	d->chip.~Handler();
 	free(d);
 }
 
@@ -188,3 +188,4 @@ void droplayer_play(droplayer d) {
 	flush_buffer(d);
 }
 
+}
