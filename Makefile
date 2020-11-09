@@ -14,4 +14,7 @@ all: $(PROGS)
 
 dro2play: $(OBJS)
 	$(CC) -o $@ $^ $(LIBS) $(LDFLAGS)
+clean:
+	rm -f *.o $(PROGS)
 
+.PHONY: all clean
