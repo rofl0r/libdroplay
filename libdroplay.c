@@ -173,6 +173,7 @@ int droplayer_fopen(droplayer d, const char *filename) {
 }
 
 void droplayer_delete(droplayer d) {
+	AoWriter_close(&d->ao);
 	fclose(d->f);
 	d->f = 0;
 	OPL_delete(d->chip[0]);
